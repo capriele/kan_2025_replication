@@ -33,8 +33,6 @@ torch.set_default_dtype(torch.float64)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-
-
 data_dir = os.path.join('.', 'data')
 
 # Number of hidden layer nodes
@@ -199,29 +197,6 @@ def optimize_scaling_factor(signal1, signal2, start=0, stop=-750):
 
     return optimal_K, optimized_signal2
 
-
-
-# Load train and test dataset
-df_train = pd.read_pickle(os.path.join(data_dir, "train_data.pkl"))
-df_test = pd.read_pickle(os.path.join(data_dir, "test_data.pkl"))
-
-# Graph the train dataset
-fig, ax = plt.subplots(1, 1, sharex='col', figsize=(6, 2))
-fig.suptitle('Test Dataset')
-ax.plot(df_test.iloc[1,:], color='black', linewidth=1)
-ax.grid(True)
-
-train_tmp = []
-test_tmp = []
-for col in df_train.columns: 
-    train_tmp.append(df_train[col])
-    test_tmp.append(df_test[col])
-dataset = {}
-dataset["train_input"] = torch.transpose(torch.Tensor(train_tmp), 0, 1)
-dataset["train_label"] = torch.transpose(torch.Tensor(train_tmp), 0, 1)
-dataset["test_input"] = torch.transpose(torch.Tensor(test_tmp), 0, 1)
-dataset["test_label"] = torch.transpose(torch.Tensor(test_tmp), 0, 1)
-
 def square_wave(frequency, points, start_x=0, stop_x=1):
     """
     Generate a symmetric square wave with random periods set to zero.
@@ -353,6 +328,27 @@ def create_window(tensor, zero_threshold=5, threshold=0.3, max_window_size=100):
             window[start_i-count_high:start_i+count_high] = 0
     return window
 
+# Load train and test dataset
+df_train = pd.read_pickle(os.path.join(data_dir, "train_data.pkl"))
+df_test = pd.read_pickle(os.path.join(data_dir, "test_data.pkl"))
+
+# Graph the train dataset
+fig, ax = plt.subplots(1, 1, sharex="col", figsize=(6, 2))
+fig.suptitle("Test Dataset")
+ax.plot(df_test.iloc[1, :], color="black", linewidth=1)
+ax.grid(True)
+
+train_tmp = []
+test_tmp = []
+for col in df_train.columns:
+    train_tmp.append(df_train[col])
+    test_tmp.append(df_test[col])
+dataset = {}
+dataset["train_input"] = torch.transpose(torch.Tensor(train_tmp), 0, 1)
+dataset["train_label"] = torch.transpose(torch.Tensor(train_tmp), 0, 1)
+dataset["test_input"] = torch.transpose(torch.Tensor(test_tmp), 0, 1)
+dataset["test_label"] = torch.transpose(torch.Tensor(test_tmp), 0, 1)
+
 space = 0.5
 noise_level = 0.04
 
@@ -367,7 +363,7 @@ real = dataset["test_input"].clone().detach()
 # Model predictions using the kan_model and dnn_model
 matr = dataset["test_input"].clone().detach()
 
-#punti anomalie
+# punti anomalie
 points = [
     [0.95, 0.97, -3],
     [0.74, 0.76, 0.5],
@@ -385,8 +381,10 @@ for p in points:
         matr[1,i] = value + noise
 matr_anomaly = matr
 matr = torch.transpose(matr, 0, 1)
-knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach().numpy()
-
+if torch.cuda.is_available():
+    knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach().numpy()
+else:
+    knn_output_anomaly = model(matr_anomaly).cpu().detach().numpy()
 error = (matr_anomaly-knn_output_anomaly)
 error = error[1,:]
 error = torch.absolute(error)
@@ -436,7 +434,10 @@ anomaly_vector = triangular_wave(1, train_samples, 0, 100)
 anomaly_tensor = torch.Tensor(anomaly_vector)
 matr_anomaly = matr + anomaly_tensor
 
-knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach().numpy()
+if torch.cuda.is_available():
+    knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach().numpy()
+else:
+    knn_output_anomaly = model(matr_anomaly).cpu().detach().numpy()
 
 error = (matr_anomaly-knn_output_anomaly)
 error = error[1,:]
@@ -487,17 +488,20 @@ anomaly_vector = 0.5*square_wave(2, train_samples, 0, 100)
 anomaly_tensor = torch.Tensor(anomaly_vector)
 matr_anomaly = matr + anomaly_tensor
 
-knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach().numpy()
+if torch.cuda.is_available():
+    knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach().numpy()
+else:
+    knn_output_anomaly = model(matr_anomaly).cpu().detach().numpy()
 
 error = (matr_anomaly-knn_output_anomaly)
 error = error[1,:]
 error = torch.absolute(error)
 error_window = create_window(error, zero_threshold=13, threshold=0.4, max_window_size=1000)
 
+ymin, ymax = matr_anomaly.min(), matr_anomaly.max()
+"""
 # Plot the outputs from both models
 fig, ax = plt.subplots(figsize=(10, 6))
-
-ymin, ymax = matr_anomaly.min(), matr_anomaly.max()
 ax.vlines(x[(error_window==1).nonzero().squeeze()], ymin-space, ymax+space, alpha=0.01, color='#ff0000')
 ax.plot(x, matr_anomaly[1,:].flatten(), label='Signal with anomalies', color='black', linewidth=1)
 ax.plot(x, knn_output_anomaly[1,:].flatten(), label='KAN Output', color='blue', linewidth=1)
@@ -508,6 +512,7 @@ ax.plot(x, error_window.flatten(), label='Anomaly Detection', color='purple', li
 ax.grid(True)
 ax.set_title('KAN Anomaly Detection - Case 3')
 ax.set_ylim(-3, 3)
+"""
 
 # Show legend
 ax.legend()
@@ -527,7 +532,7 @@ x = dataset["train_input"][0,:].clone().detach()
 # Model predictions using the kan_model and dnn_model
 matr = matr = dataset["test_input"].clone().detach()
 
-#punti anomalie
+# punti anomalie
 points = [
     [0.95, 0.97, -3],
     [0.74, 0.76, 0.5],
@@ -548,7 +553,10 @@ for i in range(len(matr[1,:])-750, len(matr[1,:])):
     matr[1,i] = 0
 
 matr_anomaly = matr
-knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach()
+if torch.cuda.is_available():
+    knn_output_anomaly = model(matr_anomaly.cuda()).cpu().detach()
+else:
+    knn_output_anomaly = model(matr_anomaly).cpu().detach()
 optimal_k, knn_output_anomaly[1,:] = optimize_scaling_factor(matr_anomaly[1,:], knn_output_anomaly[1,:])
 print(optimal_k)
 error = (matr_anomaly-knn_output_anomaly)
@@ -581,4 +589,3 @@ plt.savefig('testing4.png')
 finish_time = time.time()
 time_in_secs = finish_time - start_time
 print(f"Elapsed Time: {time_in_secs} seconds")
-

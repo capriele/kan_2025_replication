@@ -51,13 +51,15 @@ df_train = pd.read_pickle(os.path.join(data_dir, "train_data.pkl"))
 df_test = pd.read_pickle(os.path.join(data_dir, "test_data.pkl"))
 
 # Graph the train dataset
+"""
 fig, ax = plt.subplots(1, 1, sharex='col', figsize=(6, 2))
 fig.suptitle('Training Dataset')
 ax.plot(df_train.iloc[1,:], color='black', linewidth=1)
 ax.grid(True)
 
 plt.xticks(rotation=20)
-fig.tight_layout()
+fig.tight_layout()'
+"""
 
 train_tmp = []
 test_tmp = []
@@ -83,7 +85,7 @@ model(dataset['train_input'])
 model.fit(dataset, opt="LBFGS", steps=epochs);
 
 model.fit(dataset, opt="LBFGS", steps=epochs);
-model.plot() # Disabled it takes too much time
+# model.plot() # Disabled it takes too much time
 finish_time = time.time()
 time_in_secs = finish_time - start_time
 print(f"Elapsed Time: {time_in_secs} seconds")
