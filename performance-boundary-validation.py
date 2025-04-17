@@ -72,6 +72,8 @@ def iteration_callback(iteration):
         y = add_white_noise(y_clear, 0.0, variance)
         dataset["train_input"] = x
         dataset["train_label"] = y
+        dataset["train_input"] = dataset["train_input"].to(device)
+        dataset["train_label"] = dataset["train_label"].to(device)
 
         kan_model = MultKAN(
             width=[input_size, hidden_layers, hidden_layers, output_size],
