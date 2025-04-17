@@ -10,7 +10,7 @@ from kan.utils import ex_round
 
 torch.set_default_dtype(torch.float32)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Parameters
@@ -170,7 +170,9 @@ if __name__ == "__main__":
     for result in results:
         table += result + "\n"
 
-    print(table)
+    output_file = "performance_boundary_validation.txt"
+    with open(output_file, "w") as f:
+        f.write(table)
 
     finish_time = time.time()
     time_in_secs = finish_time - start_time
