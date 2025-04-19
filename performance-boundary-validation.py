@@ -137,7 +137,9 @@ def iteration_callback(iteration):
 
 def worker(iteration_range, results):
     for iteration in iteration_range:
-        result = iteration_callback(iteration)
+        result = "nan"
+        while not result or "nan" in result:
+            result = iteration_callback(iteration)
         if result:
             results.append(result)
 
