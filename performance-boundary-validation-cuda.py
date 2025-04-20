@@ -4,6 +4,7 @@ import random
 import sys
 import torch
 import torch.multiprocessing as mp
+from torch.cuda import Stream
 from kan import *
 from kan.utils import create_dataset
 from kan.utils import ex_round
@@ -26,8 +27,8 @@ test_samples = 1000
 interval = (0, 2 * torch.pi)
 
 # Number of tests
-iterations = 10000
-num_processes = 10  # Number of parallel processes
+iterations = 1000
+num_processes = 4  # Number of parallel processes
 
 f = lambda x: torch.sin(x[:, [0]])
 x = torch.linspace(interval[0], interval[1], train_samples)
@@ -70,63 +71,77 @@ def add_white_noise(x_train, mean=0.0, variance=0.01):
 def iteration_callback(iteration):
     try:
         y = add_white_noise(y_clear, 0.0, variance)
-        dataset["train_input"] = x
-        dataset["train_label"] = y
-        dataset["train_input"] = dataset["train_input"].to(device)
-        dataset["train_label"] = dataset["train_label"].to(device)
+        local_dataset = {
+            "train_input": x.clone(),
+            "train_label": y.clone(),
+        }
 
-        kan_model = MultKAN(
-            width=[input_size, hidden_layers, output_size],
-            grid=5,
-            k=3,
-            device=device,
-            auto_save=False,
-        )
+        if stream is None:
+            stream = torch.cuda.default_stream()
 
-        kan_model.fit(
-            dataset,
-            opt="LBFGS",
-            steps=epochs,
-            update_grid=True,
-            lamb=learning_rate,
-            loss_fn=torch.nn.MSELoss(),
-            log=-1,
-        )
+        with torch.cuda.stream(stream):
+            local_dataset["train_input"] = local_dataset["train_input"].to(
+                device, non_blocking=True
+            )
+            local_dataset["train_label"] = local_dataset["train_label"].to(
+                device, non_blocking=True
+            )
 
-        kan_model = kan_model.prune(node_th=1e-1)
-        kan_model.fit(
-            dataset,
-            opt="LBFGS",
-            steps=epochs,
-            update_grid=True,
-            lamb=learning_rate / 2,
-            loss_fn=torch.nn.MSELoss(),
-            log=-1,
-        )
+            kan_model = MultKAN(
+                width=[input_size, hidden_layers, output_size],
+                grid=5,
+                k=3,
+                device=device,
+                auto_save=False,
+            )
 
-        kan_model.auto_symbolic(
-            lib=lib,
-            r2_threshold=0.9,
-            verbose=0,
-        )
-        kan_model.fit(
-            dataset,
-            opt="LBFGS",
-            steps=epochs,
-            update_grid=True,
-            lamb=learning_rate,
-            loss_fn=torch.nn.MSELoss(),
-            log=-1,
-        )
+            kan_model.fit(
+                local_dataset,
+                opt="LBFGS",
+                steps=epochs,
+                update_grid=True,
+                lamb=learning_rate,
+                loss_fn=torch.nn.MSELoss(),
+                log=-1,
+            )
 
-        training_data_codomain = (float(min(y)[0]), float(max(y)[0]))
-        kan_model_output = kan_model(dataset["train_input"]).detach().cpu().numpy()
-        kan_model_codomain = (
-            float(min(kan_model_output)[0]),
-            float(max(kan_model_output)[0]),
-        )
-        equation = ""  # ex_round(kan_model.symbolic_formula()[0][0], 4)
+            kan_model = kan_model.prune(node_th=1e-1)
+            kan_model.fit(
+                local_dataset,
+                opt="LBFGS",
+                steps=epochs,
+                update_grid=True,
+                lamb=learning_rate / 2,
+                loss_fn=torch.nn.MSELoss(),
+                log=-1,
+            )
 
+            kan_model.auto_symbolic(
+                lib=lib,
+                r2_threshold=0.9,
+                verbose=0,
+            )
+            kan_model.fit(
+                local_dataset,
+                opt="LBFGS",
+                steps=epochs,
+                update_grid=True,
+                lamb=learning_rate,
+                loss_fn=torch.nn.MSELoss(),
+                log=-1,
+            )
+
+            training_data_codomain = (float(min(y)[0]), float(max(y)[0]))
+            kan_model_output = (
+                kan_model(local_dataset["train_input"]).detach().cpu().numpy()
+            )
+            kan_model_codomain = (
+                float(min(kan_model_output)[0]),
+                float(max(kan_model_output)[0]),
+            )
+            equation = ""
+
+        stream.synchronize()  # Ensure stream is complete before using result
         output = f"| {iteration + 1} | {training_data_codomain} | {kan_model_codomain} | {equation} |"
         print(output)
         return output
@@ -138,8 +153,9 @@ def iteration_callback(iteration):
 def worker(iteration_range, results):
     for iteration in iteration_range:
         result = "nan"
+        stream = Stream()
         while not result or "nan" in result:
-            result = iteration_callback(iteration)
+            result = iteration_callback(iteration, stream=stream)
         if result:
             results.append(result)
 
@@ -159,6 +175,7 @@ if __name__ == "__main__":
     for i in range(num_processes):
         start = i * iterations_per_process
         end = (i + 1) * iterations_per_process if i != num_processes - 1 else iterations
+        print(i, start, end)
         p = mp.Process(target=worker, args=(range(start, end), results))
         processes.append(p)
         p.start()
