@@ -68,7 +68,7 @@ To validate the model's performance on safe boundary detection, use the `test_bo
 - model: Contains the saved model states and configurations.
 - `kan_anomaly_detection_training.ipynb`: Jupyter notebook for training the anomaly detection model.
 - `kan_anomaly_detection_testing.ipynb`: Jupyter notebook for testing the anomaly detection model.
-- `kan_anomaly_detection_testing.ipynb`: Jupyter notebook for validating safe boundary detection.
+- `test_boundary_validation.ipynb`: Jupyter notebook for validating safe boundary detection.
 
 ## Contributing
 
