@@ -66,10 +66,39 @@ To validate the model's performance on safe boundary detection, use the `test_bo
 - data: Contains the training and testing data files.
 - kan: Contains the core code for the KAN project, including various modules and utilities.
 - model: Contains the saved model states and configurations.
-- `kan_anomaly_detection_training.ipynb`: Jupyter notebook for training the anomaly detection model.
-- `kan_anomaly_detection_testing.ipynb`: Jupyter notebook for testing the anomaly detection model.
 - `test_boundary_validation.ipynb`: Jupyter notebook for validating safe boundary detection.
 - `test_noise.ipynb`: Jupyter notebook for KAN example fitting test with a sine function.
+
+### Anomaly Detection Models: Overview and Notebooks
+
+Each solution follows the same workflow, consisting of two Jupyter notebooks: one for training the model and another for evaluating its performance. We implemented and compared three different anomaly detection approaches:
+
+- **KAN-based anomaly detection**
+- **LSTM-based anomaly detection**
+- **Autoencoder-based anomaly detection**
+
+All three implementations are functional. The key difference lies in model efficiency: the **KAN-based model achieves higher accuracy** when all models are constrained to the same size. To ensure competitive performance, the **LSTM** and **Autoencoder** models were scaled up, making them significantly **larger than the KAN model**.
+
+#### Notebook Structure
+
+- `kan_anomaly_detection_training.ipynb`  
+  *Training the KAN anomaly detection model*
+
+- `kan_anomaly_detection_testing.ipynb`  
+  *Testing the KAN anomaly detection model*
+
+- `lstm_anomaly_detection_training.ipynb`  
+  *Training the LSTM anomaly detection model*
+
+- `lstm_anomaly_detection_testing.ipynb`  
+  *Testing the LSTM anomaly detection model*
+
+- `ae_anomaly_detection_training.ipynb`  
+  *Training the Autoencoder anomaly detection model*
+
+- `ae_anomaly_detection_testing.ipynb`  
+  *Testing the Autoencoder anomaly detection model*
+
 
 ## Contributing
 
