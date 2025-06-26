@@ -1,6 +1,6 @@
-# KAN 2025 Replication Package
+# SafeKAN Replication Package
 
-Welcome to the KAN 2025 replication package repository! This repository provides all the necessary resources—data, models, and code—to reproduce the experiments and results from the KAN 2025 project.
+Welcome to the SafeKAN replication package repository! This repository provides all the necessary resources—data, models, and code—to reproduce the experiments and results.
 
 ## Getting Started
 
@@ -49,13 +49,6 @@ Ensure you have the following installed before proceeding:
 
 ## Usage
 
-### Training
-
-To train the anomaly detection model, run the `kan_anomaly_detection_training.ipynb` notebook.
-
-### Testing
-
-To test the anomaly detection model, run the `kan_anomaly_detection_testing.ipynb` notebook.
 
 ### Boundary Validation
 
@@ -64,7 +57,6 @@ To validate the model's performance on safe boundary detection, use the `test_bo
 ## Directory Details
 
 - data: Contains the training and testing data files.
-- kan: Contains the core code for the KAN project, including various modules and utilities.
 - model: Contains the saved model states and configurations.
 - `test_boundary_validation.ipynb`: Jupyter notebook for validating safe boundary detection.
 - `test_noise.ipynb`: Jupyter notebook for KAN example fitting test with a sine function.
@@ -110,5 +102,5 @@ This project is licensed under the Apache 2.0 License.
 
 ## Acknowledgments
 
-- Special thanks to the contributors of the KAN project.
-- This project is based on the work presented in the KAN 2025 paper.
+- Special thanks to the contributors of the SafeKAN project.
+- This project is based on the work presented in the SafeKAN paper.
